@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import pickle
 import time
+import random
 
 # ======================================================
 # LOAD MODEL
@@ -10,7 +11,12 @@ with open("model.pkl", "rb") as f:
     model = pickle.load(f)
 
 # ======================================================
-# FEATURE LIST (SAME AS TRAINING)
+# MODEL ACCURACY (REAL FROM NOTEBOOK)
+# ======================================================
+MODEL_ACCURACY = 0.850776568905708
+
+# ======================================================
+# FEATURES
 # ======================================================
 FEATURES = [
     'HighBP', 'HighChol', 'CholCheck', 'BMI', 'Smoker', 'Stroke',
@@ -20,55 +26,40 @@ FEATURES = [
 ]
 
 # ======================================================
-# PAGE CONFIG
+# QUOTES
 # ======================================================
-st.set_page_config(
-    page_title="Diabetes Prediction",
-    page_icon="🩺",
-    layout="centered",
-    initial_sidebar_state="expanded",
-)
+QUOTES = [
+    "Langkah kecil menuju hidup sehat lebih baik daripada tidak melangkah sama sekali. 💚",
+    "Tubuh sehat dimulai dari keputusan kecil setiap hari.",
+    "Jaga kesehatanmu — itu aset paling berharga yang kamu punya. 🌿",
+    "Tetap semangat! Perubahan besar dimulai dari niat kecil. 💪",
+    "Kesehatan adalah perjalanan, bukan tujuan."
+]
 
 # ======================================================
-# AESTHETIC CSS
+# DARK-MODE SAFE CSS
 # ======================================================
 st.markdown("""
 <style>
+.title { font-size: 32px; font-weight: 800; color: #8ab4f8; text-align: center; margin-bottom: 5px; }
+.subtitle { font-size: 16px; color: #b0b8c2; text-align: center; margin-bottom: 30px; }
 .stCard {
-    background-color: rgba(255, 255, 255, 0.08); 
+    background-color: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
     padding: 25px 30px;
-    border-radius: 18px;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    margin-bottom: 20px;
 }
-.title {
-    font-size: 32px;
-    font-weight: 700;
-    color: #1f4e79;
-    text-align: center;
-    margin-bottom: 5px;
-}
-.subtitle {
-    font-size: 16px;
-    color: #4a5568;
-    text-align: center;
-    margin-bottom: 25px;
-}
+label { font-weight: 600 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ======================================================
-# SIDEBAR
+# SIDEBAR TEMPLATES
 # ======================================================
-st.sidebar.title("ℹ️ Panduan Input")
-st.sidebar.write("""
-Pilih salah satu template untuk mengisi form secara otomatis  
-atau masukkan angka Anda sendiri.
-""")
+st.sidebar.title("🎯 Template Input")
 
-# ======================================================
-# TEMPLATE DATA
-# ======================================================
 templates = {
     "Sehat / Low Risk": {
         'HighBP': 0, 'HighChol': 0, 'CholCheck': 1, 'BMI': 23,
@@ -76,7 +67,7 @@ templates = {
         'PhysActivity': 1, 'Fruits': 1, 'Veggies': 1,
         'HvyAlcoholConsump': 0, 'GenHlth': 2,
         'MentHlth': 1, 'PhysHlth': 1, 'DiffWalk': 0,
-        'Sex': 1, 'Age': 30
+        'Sex': 1, 'Age': 28
     },
 
     "Pre-Diabetes / Medium Risk": {
@@ -84,79 +75,91 @@ templates = {
         'Smoker': 1, 'Stroke': 0, 'HeartDiseaseorAttack': 0,
         'PhysActivity': 0, 'Fruits': 0, 'Veggies': 1,
         'HvyAlcoholConsump': 1, 'GenHlth': 3,
-        'MentHlth': 5, 'PhysHlth': 7, 'DiffWalk': 0,
-        'Sex': 0, 'Age': 45
+        'MentHlth': 4, 'PhysHlth': 6, 'DiffWalk': 0,
+        'Sex': 0, 'Age': 43
     },
 
     "Diabetes / High Risk": {
-        'HighBP': 1, 'HighChol': 1, 'CholCheck': 1, 'BMI': 37,
+        'HighBP': 1, 'HighChol': 1, 'CholCheck': 1, 'BMI': 42,
         'Smoker': 1, 'Stroke': 1, 'HeartDiseaseorAttack': 1,
         'PhysActivity': 0, 'Fruits': 0, 'Veggies': 0,
-        'HvyAlcoholConsump': 1, 'GenHlth': 4,
-        'MentHlth': 10, 'PhysHlth': 15, 'DiffWalk': 1,
-        'Sex': 1, 'Age': 60
+        'HvyAlcoholConsump': 1, 'GenHlth': 5,
+        'MentHlth': 14, 'PhysHlth': 25, 'DiffWalk': 1,
+        'Sex': 1, 'Age': 62
     }
 }
 
-st.sidebar.subheader("🎯 Template Cepat")
 selected_template = st.sidebar.selectbox(
-    "Pilih contoh data:",
-    ["Tidak ada", "Sehat / Low Risk", "Pre-Diabetes / Medium Risk", "Diabetes / High Risk"]
+    "Pilih template:",
+    ["Tidak ada", *templates.keys()]
 )
 
 # ======================================================
 # HEADER
 # ======================================================
 st.markdown('<p class="title">🩺 Diabetes Health Risk Predictor</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Prediksi risiko diabetes berdasarkan indikator kesehatan</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Prediksi risiko diabetes berdasarkan indikator kesehatan Anda</p>', unsafe_allow_html=True)
+
+# ======================================================
+# MOTIVATIONAL CARD
+# ======================================================
+st.markdown('<div class="stCard">', unsafe_allow_html=True)
+st.subheader("✨ Motivasi Hari Ini")
+st.write(random.choice(QUOTES))
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ======================================================
+# FORM INPUT
+# ======================================================
+prefill = templates.get(selected_template)
 
 st.markdown('<div class="stCard">', unsafe_allow_html=True)
-
-# ======================================================
-# INPUT AREA
-# ======================================================
 st.subheader("Masukkan Data Kesehatan:")
 
 col1, col2 = st.columns(2)
 user_input = {}
 
-# Jika template dipilih, gunakan template
-prefill = templates[selected_template] if selected_template in templates else None
-
 for i, feature in enumerate(FEATURES):
     with (col1 if i % 2 == 0 else col2):
-        default_value = prefill[feature] if prefill else 0.0
         user_input[feature] = st.number_input(
-            f"{feature}",
-            value=float(default_value),
-            help=f"Masukkan nilai untuk {feature}"
+            feature,
+            value=float(prefill[feature]) if prefill else 0.0
         )
 
+input_df = pd.DataFrame([user_input], columns=FEATURES)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Convert to DataFrame
-input_df = pd.DataFrame([user_input], columns=FEATURES)
-
 # ======================================================
-# PREDICTION BUTTON
+# PREDICT BTN
 # ======================================================
 if st.button("🔍 Prediksi Sekarang"):
     with st.spinner("Menghitung prediksi..."):
         time.sleep(1.2)
         pred = model.predict(input_df)[0]
+        probs = model.predict_proba(input_df)[0]
 
     label_map = {0: "Tidak Diabetes", 1: "Pre-Diabetes", 2: "Diabetes"}
-    colors = {0: "#38a169", 1: "#d69e2e", 2: "#e53e3e"}
+    colors = {0: "#4ade80", 1: "#facc15", 2: "#f87171"}
 
-    st.subheader("📊 Hasil Prediksi:")
     st.markdown(
         f"""
-        <div class="stCard" style="background-color: {colors[pred]}20;">
-            <h2 style="color: {colors[pred]}; text-align:center; font-weight:700;">
+        <div class="stCard" style="border-left: 6px solid {colors[pred]};">
+            <h2 style="color:{colors[pred]}; text-align:center; font-weight:700;">
                 {label_map[pred]}
             </h2>
-            <p style="text-align:center; color:#4a5568;">
-                Berdasarkan indikator kesehatan yang Anda masukkan.
+            <p style="text-align:center; color:#cbd5e1; font-size:16px;">
+                Akurasi model: <b>{MODEL_ACCURACY * 100:.2f}%</b>
+            </p>
+
+            <p style="text-align:center; color:#b0b8c2; font-size:14px;">
+                Probabilitas: <br>
+                Tidak Diabetes: {probs[0]:.3f}<br>
+                Pre-Diabetes: {probs[1]:.3f}<br>
+                Diabetes: {probs[2]:.3f}
+            </p>
+
+            <p style="text-align:center; color:#94a3b8; font-size:12px;">
+                *Prediksi ini hanya estimasi berbasis data. Konsultasikan dengan tenaga kesehatan untuk penilaian lebih lanjut.*
             </p>
         </div>
         """,
