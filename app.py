@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 import time
 import random
+import streamlit.components.v1 as components
 
 # ======================================================
 # LOAD MODEL
@@ -37,12 +38,32 @@ QUOTES = [
 ]
 
 # ======================================================
-# DARK-MODE SAFE CSS
+# STREAMLIT PAGE CONFIG
+# ======================================================
+st.set_page_config(
+    page_title="Diabetes Health Risk Predictor",
+    page_icon="🩺",
+    layout="centered"
+)
+
+# ======================================================
+# CSS FIX FOR DARK MODE + GLASS CARD
 # ======================================================
 st.markdown("""
 <style>
-.title { font-size: 32px; font-weight: 800; color: #8ab4f8; text-align: center; margin-bottom: 5px; }
-.subtitle { font-size: 16px; color: #b0b8c2; text-align: center; margin-bottom: 30px; }
+.title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #8ab4f8;
+    text-align: center;
+    margin-bottom: 5px;
+}
+.subtitle {
+    font-size: 16px;
+    color: #b0b8c2;
+    text-align: center;
+    margin-bottom: 30px;
+}
 .stCard {
     background-color: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(8px);
@@ -51,14 +72,17 @@ st.markdown("""
     border: 1px solid rgba(255, 255, 255, 0.18);
     margin-bottom: 20px;
 }
-label { font-weight: 600 !important; }
+label {
+    font-weight: 600 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ======================================================
-# SIDEBAR TEMPLATES
+# SIDEBAR TEMPLATE INPUT
 # ======================================================
 st.sidebar.title("🎯 Template Input")
+st.sidebar.write("Pilih salah satu template untuk auto-fill:")
 
 templates = {
     "Sehat / Low Risk": {
@@ -101,7 +125,7 @@ st.markdown('<p class="title">🩺 Diabetes Health Risk Predictor</p>', unsafe_a
 st.markdown('<p class="subtitle">Prediksi risiko diabetes berdasarkan indikator kesehatan Anda</p>', unsafe_allow_html=True)
 
 # ======================================================
-# MOTIVATIONAL CARD
+# MOTIVATIONAL QUOTE CARD
 # ======================================================
 st.markdown('<div class="stCard">', unsafe_allow_html=True)
 st.subheader("✨ Motivasi Hari Ini")
@@ -109,9 +133,9 @@ st.write(random.choice(QUOTES))
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ======================================================
-# FORM INPUT
+# INPUT FORM
 # ======================================================
-prefill = templates.get(selected_template)
+prefill = templates.get(selected_template, None)
 
 st.markdown('<div class="stCard">', unsafe_allow_html=True)
 st.subheader("Masukkan Data Kesehatan:")
@@ -123,45 +147,63 @@ for i, feature in enumerate(FEATURES):
     with (col1 if i % 2 == 0 else col2):
         user_input[feature] = st.number_input(
             feature,
-            value=float(prefill[feature]) if prefill else 0.0
+            value=float(prefill[feature]) if prefill else 0.0,
         )
 
 input_df = pd.DataFrame([user_input], columns=FEATURES)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
+
 # ======================================================
-# PREDICT BTN
+# PREDICTION LOGIC
 # ======================================================
 if st.button("🔍 Prediksi Sekarang"):
+
     with st.spinner("Menghitung prediksi..."):
-        time.sleep(1.2)
+        time.sleep(1.3)
+
         pred = model.predict(input_df)[0]
         probs = model.predict_proba(input_df)[0]
 
     label_map = {0: "Tidak Diabetes", 1: "Pre-Diabetes", 2: "Diabetes"}
     colors = {0: "#4ade80", 1: "#facc15", 2: "#f87171"}
 
-    st.markdown(
-        f"""
-        <div class="stCard" style="border-left: 6px solid {colors[pred]};">
-            <h2 style="color:{colors[pred]}; text-align:center; font-weight:700;">
-                {label_map[pred]}
-            </h2>
-            <p style="text-align:center; color:#cbd5e1; font-size:16px;">
-                Akurasi model: <b>{MODEL_ACCURACY * 100:.2f}%</b>
-            </p>
+    # HTML Result Rendering
 
-            <p style="text-align:center; color:#b0b8c2; font-size:14px;">
-                Probabilitas: <br>
-                Tidak Diabetes: {probs[0]:.3f}<br>
-                Pre-Diabetes: {probs[1]:.3f}<br>
-                Diabetes: {probs[2]:.3f}
-            </p>
+    html_result = f"""
+    <div style="
+        background-color: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        padding: 25px;
+        border-radius: 16px;
+        border-left: 6px solid {colors[pred]};
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        margin-top: 20px;
+        font-family: 'Segoe UI', sans-serif;
+        color: #e2e8f0;
+    ">
+        
+        <h2 style="color:{colors[pred]}; text-align:center; font-weight:700; margin-bottom:5px;">
+            {label_map[pred]}
+        </h2>
 
-            <p style="text-align:center; color:#94a3b8; font-size:12px;">
-                *Prediksi ini hanya estimasi berbasis data. Konsultasikan dengan tenaga kesehatan untuk penilaian lebih lanjut.*
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        <p style="text-align:center; font-size:16px;">
+            Akurasi model: <b>{MODEL_ACCURACY * 100:.2f}%</b>
+        </p>
+
+        <p style="text-align:center; font-size:14px; margin-top:15px;">
+            <b>Probabilitas Prediksi:</b><br>
+            Tidak Diabetes: {probs[0]:.3f}<br>
+            Pre-Diabetes: {probs[1]:.3f}<br>
+            Diabetes: {probs[2]:.3f}
+        </p>
+
+        <p style="text-align:center; font-size:12px; margin-top:15px; color:#cbd5e1;">
+            *Prediksi ini hanya estimasi berbasis data. Untuk hasil yang lebih pasti, konsultasikan dengan tenaga kesehatan.*
+        </p>
+
+    </div>
+    """
+
+    components.html(html_result, height=350)
