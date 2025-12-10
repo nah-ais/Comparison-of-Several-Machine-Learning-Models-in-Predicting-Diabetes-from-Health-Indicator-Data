@@ -35,7 +35,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .stCard {
-    background-color: #f2f7ff;
+    background-color: rgba(255, 255, 255, 0.08); 
     padding: 25px 30px;
     border-radius: 18px;
     box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
