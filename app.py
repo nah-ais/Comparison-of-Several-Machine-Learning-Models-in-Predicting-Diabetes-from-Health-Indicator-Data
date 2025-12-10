@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import pickle
 import time
-import random
 import streamlit.components.v1 as components
 
 # ======================================================
@@ -12,7 +11,7 @@ with open("model.pkl", "rb") as f:
     model = pickle.load(f)
 
 # ======================================================
-# MODEL ACCURACY (REAL FROM NOTEBOOK)
+# MODEL ACCURACY
 # ======================================================
 MODEL_ACCURACY = 0.850776568905708
 
@@ -27,17 +26,6 @@ FEATURES = [
 ]
 
 # ======================================================
-# QUOTES
-# ======================================================
-QUOTES = [
-    "Langkah kecil menuju hidup sehat lebih baik daripada tidak melangkah sama sekali. 💚",
-    "Tubuh sehat dimulai dari keputusan kecil setiap hari.",
-    "Jaga kesehatanmu — itu aset paling berharga yang kamu punya. 🌿",
-    "Tetap semangat! Perubahan besar dimulai dari niat kecil. 💪",
-    "Kesehatan adalah perjalanan, bukan tujuan."
-]
-
-# ======================================================
 # STREAMLIT PAGE CONFIG
 # ======================================================
 st.set_page_config(
@@ -47,7 +35,7 @@ st.set_page_config(
 )
 
 # ======================================================
-# CSS FIX FOR DARK MODE + GLASS CARD
+# DARK MODE CSS FIX
 # ======================================================
 st.markdown("""
 <style>
@@ -67,14 +55,13 @@ st.markdown("""
 .stCard {
     background-color: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(8px);
-    padding: 25px 30px;
+    padding: 25px;
     border-radius: 16px;
+    border-left: 6px solid rgba(255,255,255,0.3);
     border: 1px solid rgba(255, 255, 255, 0.18);
     margin-bottom: 20px;
 }
-label {
-    font-weight: 600 !important;
-}
+label { font-weight: 600 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -82,7 +69,7 @@ label {
 # SIDEBAR TEMPLATE INPUT
 # ======================================================
 st.sidebar.title("🎯 Template Input")
-st.sidebar.write("Pilih salah satu template untuk auto-fill:")
+st.sidebar.write("Gunakan template untuk auto-fill data:")
 
 templates = {
     "Sehat / Low Risk": {
@@ -95,21 +82,39 @@ templates = {
     },
 
     "Pre-Diabetes / Medium Risk": {
-        'HighBP': 1, 'HighChol': 1, 'CholCheck': 1, 'BMI': 30,
-        'Smoker': 1, 'Stroke': 0, 'HeartDiseaseorAttack': 0,
-        'PhysActivity': 0, 'Fruits': 0, 'Veggies': 1,
-        'HvyAlcoholConsump': 1, 'GenHlth': 3,
-        'MentHlth': 4, 'PhysHlth': 6, 'DiffWalk': 0,
-        'Sex': 0, 'Age': 43
+        'HighBP': 1, 'HighChol': 1, 'CholCheck': 1, 
+        'BMI': 33,                   # made stronger for class 1
+        'Smoker': 1,
+        'Stroke': 0,
+        'HeartDiseaseorAttack': 0,
+        'PhysActivity': 0,
+        'Fruits': 0,
+        'Veggies': 1,
+        'HvyAlcoholConsump': 1,
+        'GenHlth': 3,
+        'MentHlth': 8,
+        'PhysHlth': 10,
+        'DiffWalk': 0,
+        'Sex': 0,
+        'Age': 50
     },
 
     "Diabetes / High Risk": {
-        'HighBP': 1, 'HighChol': 1, 'CholCheck': 1, 'BMI': 42,
-        'Smoker': 1, 'Stroke': 1, 'HeartDiseaseorAttack': 1,
-        'PhysActivity': 0, 'Fruits': 0, 'Veggies': 0,
-        'HvyAlcoholConsump': 1, 'GenHlth': 5,
-        'MentHlth': 14, 'PhysHlth': 25, 'DiffWalk': 1,
-        'Sex': 1, 'Age': 62
+        'HighBP': 1, 'HighChol': 1, 'CholCheck': 1,
+        'BMI': 42,
+        'Smoker': 1,
+        'Stroke': 1,
+        'HeartDiseaseorAttack': 1,
+        'PhysActivity': 0,
+        'Fruits': 0,
+        'Veggies': 0,
+        'HvyAlcoholConsump': 1,
+        'GenHlth': 5,
+        'MentHlth': 14,
+        'PhysHlth': 25,
+        'DiffWalk': 1,
+        'Sex': 1,
+        'Age': 62
     }
 }
 
@@ -122,15 +127,8 @@ selected_template = st.sidebar.selectbox(
 # HEADER
 # ======================================================
 st.markdown('<p class="title">🩺 Diabetes Health Risk Predictor</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Prediksi risiko diabetes berdasarkan indikator kesehatan Anda</p>', unsafe_allow_html=True)
-
-# ======================================================
-# MOTIVATIONAL QUOTE CARD
-# ======================================================
-st.markdown('<div class="stCard">', unsafe_allow_html=True)
-st.subheader("✨ Motivasi Hari Ini")
-st.write(random.choice(QUOTES))
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Prediksi risiko diabetes berdasarkan indikator kesehatan Anda</p>',
+            unsafe_allow_html=True)
 
 # ======================================================
 # INPUT FORM
@@ -147,30 +145,47 @@ for i, feature in enumerate(FEATURES):
     with (col1 if i % 2 == 0 else col2):
         user_input[feature] = st.number_input(
             feature,
-            value=float(prefill[feature]) if prefill else 0.0,
+            value=float(prefill[feature]) if prefill else 0.0
         )
 
 input_df = pd.DataFrame([user_input], columns=FEATURES)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-
 # ======================================================
-# PREDICTION LOGIC
+# PREDICTION
 # ======================================================
 if st.button("🔍 Prediksi Sekarang"):
 
     with st.spinner("Menghitung prediksi..."):
         time.sleep(1.3)
 
-        pred = model.predict(input_df)[0]
-        probs = model.predict_proba(input_df)[0]
+    pred = model.predict(input_df)[0]
+    probs = model.predict_proba(input_df)[0]
 
     label_map = {0: "Tidak Diabetes", 1: "Pre-Diabetes", 2: "Diabetes"}
     colors = {0: "#4ade80", 1: "#facc15", 2: "#f87171"}
 
-    # HTML Result Rendering
+    # Expected label by template
+    expected_label = None
+    if selected_template == "Sehat / Low Risk":
+        expected_label = 0
+    elif selected_template == "Pre-Diabetes / Medium Risk":
+        expected_label = 1
+    elif selected_template == "Diabetes / High Risk":
+        expected_label = 2
 
+    # Warning if model prediction does not match template category
+    warning_html = ""
+    if expected_label is not None and expected_label != pred:
+        warning_html = f"""
+        <p style='color:#f87171; text-align:center; font-size:14px; margin-top:10px;'>
+            ⚠️ Catatan: Template ini mewakili kondisi <b>{label_map[expected_label]}</b>,
+            namun model memprediksi <b>{label_map[pred]}</b>.
+        </p>
+        """
+
+    # Final result HTML
     html_result = f"""
     <div style="
         background-color: rgba(255, 255, 255, 0.08);
@@ -199,11 +214,13 @@ if st.button("🔍 Prediksi Sekarang"):
             Diabetes: {probs[2]:.3f}
         </p>
 
+        {warning_html}
+
         <p style="text-align:center; font-size:12px; margin-top:15px; color:#cbd5e1;">
-            *Prediksi ini hanya estimasi berbasis data. Untuk hasil yang lebih pasti, konsultasikan dengan tenaga kesehatan.*
+            *Prediksi ini adalah estimasi berbasis data. Untuk kepastian medis, konsultasikan dengan tenaga kesehatan.*
         </p>
 
     </div>
     """
 
-    components.html(html_result, height=350)
+    components.html(html_result, height=420)
